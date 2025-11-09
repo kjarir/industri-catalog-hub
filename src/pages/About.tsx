@@ -1,25 +1,99 @@
+import { useEffect, useRef } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Card, CardContent } from '@/components/ui/card';
 import { Building2, CheckCircle2, Target, Heart } from 'lucide-react';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 const About = () => {
+  const heroRef = useRef<HTMLElement>(null);
+  const contentRef = useRef<HTMLElement>(null);
+  const valuesRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    // Hero animation
+    if (heroRef.current) {
+      const title = heroRef.current.querySelector('h1');
+      const subtitle = heroRef.current.querySelector('p');
+      
+      gsap.fromTo(
+        [title, subtitle],
+        { opacity: 0, y: 30 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 1,
+          stagger: 0.2,
+          ease: 'power3.out',
+        }
+      );
+    }
+
+    // Content sections animation
+    if (contentRef.current) {
+      const sections = contentRef.current.querySelectorAll('div > div');
+      gsap.fromTo(
+        sections,
+        { opacity: 0, y: 40 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.8,
+          stagger: 0.15,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: contentRef.current,
+            start: 'top 80%',
+            toggleActions: 'play none none none',
+          },
+        }
+      );
+    }
+
+    // Values cards animation
+    if (valuesRef.current) {
+      const cards = valuesRef.current.querySelectorAll('[class*="Card"]');
+      gsap.fromTo(
+        cards,
+        { opacity: 0, y: 50, scale: 0.9 },
+        {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.8,
+          stagger: 0.2,
+          ease: 'back.out(1.7)',
+          scrollTrigger: {
+            trigger: valuesRef.current,
+            start: 'top 80%',
+            toggleActions: 'play none none none',
+          },
+        }
+      );
+    }
+  }, []);
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="py-20 bg-gradient-hero text-primary-foreground">
+        <section ref={heroRef} className="py-20 bg-gradient-hero text-primary-foreground">
           <div className="container mx-auto px-4 text-center">
-            <h1 className="text-5xl font-bold mb-6 animate-fade-in">About Flowra Valves</h1>
-            <p className="text-xl max-w-3xl mx-auto opacity-90 animate-slide-up">
+            <h1 className="text-5xl md:text-6xl font-bold mb-6">About Flowra Valves</h1>
+            <p className="text-xl max-w-3xl mx-auto opacity-90">
               Delivering reliable, high-performance solutions for fluid control and piping systems
             </p>
           </div>
         </section>
 
         {/* Main Content */}
-        <section className="py-20">
+        <section ref={contentRef} className="py-20">
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto space-y-12">
               {/* Introduction */}
@@ -95,9 +169,9 @@ const About = () => {
         </section>
 
         {/* Values Section */}
-        <section className="py-20 bg-secondary">
+        <section ref={valuesRef} className="py-20 bg-secondary">
           <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-bold mb-12 text-center">Our Core Values</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">Our Core Values</h2>
             <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
               <Card>
                 <CardContent className="pt-6 text-center">

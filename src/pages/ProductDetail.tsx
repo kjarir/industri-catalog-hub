@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -6,10 +7,53 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Mail } from 'lucide-react';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { data: product, isLoading } = useProduct(id!);
+  const imageRef = useRef<HTMLDivElement>(null);
+  const infoRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isLoading && product) {
+      // Animate image
+      if (imageRef.current) {
+        gsap.fromTo(
+          imageRef.current,
+          { opacity: 0, scale: 0.9, x: -30 },
+          {
+            opacity: 1,
+            scale: 1,
+            x: 0,
+            duration: 0.8,
+            ease: 'power3.out',
+          }
+        );
+      }
+
+      // Animate product info
+      if (infoRef.current) {
+        gsap.fromTo(
+          infoRef.current.children,
+          { opacity: 0, y: 30 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.8,
+            stagger: 0.1,
+            ease: 'power3.out',
+            delay: 0.2,
+          }
+        );
+      }
+    }
+  }, [isLoading, product]);
 
   if (isLoading) {
     return (
@@ -71,12 +115,12 @@ const ProductDetail = () => {
           {/* Product Details */}
           <div className="grid md:grid-cols-2 gap-12">
             {/* Product Image */}
-            <div className="aspect-square overflow-hidden rounded-lg bg-secondary shadow-card">
+            <div ref={imageRef} className="aspect-square overflow-hidden rounded-lg bg-secondary shadow-card group">
               {product.image ? (
                 <img
                   src={product.image}
                   alt={product.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
@@ -86,7 +130,7 @@ const ProductDetail = () => {
             </div>
 
             {/* Product Info */}
-            <div>
+            <div ref={infoRef}>
               <div className="mb-4">
                 <Badge variant="secondary" className="mb-4">{product.category}</Badge>
                 <h1 className="text-4xl font-bold mb-4">{product.name}</h1>
