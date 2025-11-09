@@ -14,19 +14,20 @@ interface ProductCardProps {
 
 export const ProductCard = ({ id, name, category, description, image }: ProductCardProps) => {
   return (
-    <Card className="group hover:shadow-hover transition-all duration-300 overflow-hidden">
-      <div className="aspect-square overflow-hidden bg-secondary">
+    <Card className="group hover:shadow-hover transition-all duration-300 overflow-hidden hover-lift animate-fade-in">
+      <div className="aspect-square overflow-hidden bg-secondary relative">
         {image ? (
           <img
             src={image}
             alt={name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <span className="text-muted-foreground">No image</span>
           </div>
         )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
       <CardHeader>
         <div className="flex items-start justify-between">

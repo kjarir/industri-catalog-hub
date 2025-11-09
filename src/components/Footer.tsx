@@ -9,15 +9,15 @@ export const Footer = () => {
           {/* Company Info */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-gradient-hero rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-xl">IP</span>
+              <div className="w-10 h-10 bg-gradient-hero rounded-lg flex items-center justify-center shadow-card">
+                <span className="text-primary-foreground font-bold text-xl">FV</span>
               </div>
               <span className="text-lg font-bold text-foreground">
-                Industrial Products
+                FlowraValves
               </span>
             </div>
             <p className="text-muted-foreground text-sm">
-              Your trusted partner for industrial components and equipment.
+              Your trusted partner for premium industrial valves and components.
             </p>
           </div>
 
@@ -69,7 +69,7 @@ export const Footer = () => {
               </li>
               <li className="flex items-center space-x-2 text-muted-foreground">
                 <Mail className="h-4 w-4" />
-                <span className="text-sm">info@industrialproducts.com</span>
+                <span className="text-sm">info@flowravalves.com</span>
               </li>
               <li className="flex items-center space-x-2 text-muted-foreground">
                 <MapPin className="h-4 w-4" />
@@ -81,7 +81,7 @@ export const Footer = () => {
 
         <div className="border-t border-border mt-8 pt-8 text-center">
           <p className="text-muted-foreground text-sm">
-            © {new Date().getFullYear()} Industrial Products. All rights reserved.
+            © {new Date().getFullYear()} FlowraValves. All rights reserved.
           </p>
         </div>
       </div>

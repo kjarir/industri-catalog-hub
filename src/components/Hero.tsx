@@ -19,13 +19,13 @@ export const Hero = () => {
       {/* Content */}
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-2xl">
-          <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
-            Premium Industrial
-            <span className="block text-primary">Components & Equipment</span>
+          <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6 leading-tight animate-fade-in">
+            Premium Industrial Valves
+            <span className="block text-primary">& Flow Control Solutions</span>
           </h1>
-          <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-            Your trusted partner for high-quality industrial products. From fittings to valves, 
-            we provide reliable solutions for your business needs.
+          <p className="text-xl text-muted-foreground mb-8 leading-relaxed animate-slide-up">
+            FlowraValves delivers precision-engineered valves and flow control components. 
+            From gate valves to ball valves, we provide reliable solutions for critical industrial applications.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
             <Link to="/products">

@@ -18,12 +18,12 @@ export const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-gradient-hero rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-xl">IP</span>
+          <Link to="/" className="flex items-center space-x-2 hover-scale">
+            <div className="w-10 h-10 bg-gradient-hero rounded-lg flex items-center justify-center shadow-card">
+              <span className="text-primary-foreground font-bold text-xl">FV</span>
             </div>
             <span className="text-xl font-bold text-foreground hidden sm:block">
-              Industrial Products
+              FlowraValves
             </span>
           </Link>
 

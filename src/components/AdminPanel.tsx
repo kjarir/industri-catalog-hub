@@ -152,11 +152,14 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
 
   if (!isAuthenticated) {
     return (
-      <div className="fixed inset-0 bg-background/95 z-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
+      <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+        <Card className="w-full max-w-md animate-scale-in shadow-hover">
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle>Admin Login</CardTitle>
+              <div>
+                <CardTitle className="text-2xl">Admin Login</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">FlowraValves Admin Panel</p>
+              </div>
               <Button variant="ghost" size="icon" onClick={onClose}>
                 <X className="h-4 w-4" />
               </Button>
@@ -174,7 +177,8 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@example.com"
+                  placeholder="admin@flowravalves.com"
+                  className="transition-all duration-200 focus:ring-2 focus:ring-primary"
                 />
               </div>
 
@@ -189,11 +193,12 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
+                  className="transition-all duration-200 focus:ring-2 focus:ring-primary"
                 />
               </div>
 
-              <Button type="submit" className="w-full" disabled={isLoggingIn}>
-                {isLoggingIn ? 'Logging in...' : 'Login'}
+              <Button type="submit" className="w-full hover-scale" disabled={isLoggingIn}>
+                {isLoggingIn ? 'Logging in...' : 'Login to Admin Panel'}
               </Button>
             </form>
           </CardContent>

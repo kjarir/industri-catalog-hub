@@ -21,17 +21,17 @@ const Home = () => {
         <section className="py-20 bg-secondary">
           <div className="container mx-auto px-4">
             <div className="grid md:grid-cols-3 gap-8">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center mx-auto mb-4">
+              <div className="text-center animate-fade-in hover-lift p-6 rounded-lg">
+                <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center mx-auto mb-4 shadow-card">
                   <Shield className="h-8 w-8 text-primary-foreground" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2">Quality Assured</h3>
                 <p className="text-muted-foreground">
-                  All products meet strict industry standards and certifications
+                  All valves meet strict ISO certifications and industry standards
                 </p>
               </div>
-              <div className="text-center">
-                <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center mx-auto mb-4">
+              <div className="text-center animate-fade-in hover-lift p-6 rounded-lg" style={{ animationDelay: '0.1s' }}>
+                <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center mx-auto mb-4 shadow-card">
                   <Clock className="h-8 w-8 text-primary-foreground" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2">Fast Delivery</h3>
@@ -39,13 +39,13 @@ const Home = () => {
                   Quick turnaround times for all orders, nationwide shipping
                 </p>
               </div>
-              <div className="text-center">
-                <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center mx-auto mb-4">
+              <div className="text-center animate-fade-in hover-lift p-6 rounded-lg" style={{ animationDelay: '0.2s' }}>
+                <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center mx-auto mb-4 shadow-card">
                   <Award className="h-8 w-8 text-primary-foreground" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2">Expert Support</h3>
                 <p className="text-muted-foreground">
-                  Technical assistance from experienced industrial specialists
+                  Technical assistance from experienced valve specialists
                 </p>
               </div>
             </div>
@@ -95,14 +95,18 @@ const Home = () => {
         </section>
 
         {/* CTA Section */}
-        <section className="py-20 bg-gradient-hero text-primary-foreground">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="text-4xl font-bold mb-4">Ready to Get Started?</h2>
-            <p className="text-xl mb-8 opacity-90">
-              Contact us today to discuss your industrial equipment needs
+        <section className="py-20 bg-gradient-hero text-primary-foreground relative overflow-hidden">
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-0 left-0 w-64 h-64 bg-primary-foreground rounded-full blur-3xl animate-pulse" />
+            <div className="absolute bottom-0 right-0 w-96 h-96 bg-primary-foreground rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+          </div>
+          <div className="container mx-auto px-4 text-center relative z-10">
+            <h2 className="text-4xl font-bold mb-4 animate-fade-in">Ready to Get Started?</h2>
+            <p className="text-xl mb-8 opacity-90 animate-slide-up">
+              Contact us today to discuss your valve and flow control needs
             </p>
             <Link to="/contact">
-              <Button size="lg" variant="secondary">
+              <Button size="lg" variant="secondary" className="hover-scale">
                 Contact Us
               </Button>
             </Link>

@@ -11,9 +11,9 @@ const About = () => {
         {/* Hero Section */}
         <section className="py-20 bg-gradient-hero text-primary-foreground">
           <div className="container mx-auto px-4 text-center">
-            <h1 className="text-5xl font-bold mb-6">About Us</h1>
-            <p className="text-xl max-w-3xl mx-auto opacity-90">
-              Leading supplier of premium industrial components with over two decades of excellence
+            <h1 className="text-5xl font-bold mb-6 animate-fade-in">About FlowraValves</h1>
+            <p className="text-xl max-w-3xl mx-auto opacity-90 animate-slide-up">
+              Leading supplier of premium industrial valves with over two decades of excellence
             </p>
           </div>
         </section>
@@ -25,21 +25,21 @@ const About = () => {
               <h2 className="text-3xl font-bold mb-6">Our Story</h2>
               <div className="space-y-4 text-muted-foreground leading-relaxed">
                 <p>
-                  Founded in 2000, Industrial Products has grown from a small local supplier to a 
-                  trusted nationwide provider of industrial components and equipment. Our commitment 
+                  Founded in 2000, FlowraValves has grown from a small local supplier to a 
+                  trusted nationwide provider of industrial valves and flow control solutions. Our commitment 
                   to quality, reliability, and customer service has made us a preferred partner for 
-                  businesses across various industries.
+                  businesses across various industries including oil & gas, chemical processing, and manufacturing.
                 </p>
                 <p>
-                  We specialize in providing high-quality fittings, valves, connectors, and pipes 
-                  that meet the demanding requirements of modern industrial applications. Our products 
-                  are sourced from leading manufacturers and undergo rigorous quality control to ensure 
-                  they meet or exceed industry standards.
+                  We specialize in providing precision-engineered gate valves, ball valves, butterfly valves, 
+                  and check valves that meet the demanding requirements of critical industrial applications. 
+                  Our products are sourced from leading manufacturers and undergo rigorous quality control 
+                  to ensure they meet or exceed ISO and industry standards.
                 </p>
                 <p>
-                  With a team of experienced professionals and a comprehensive inventory, we're equipped 
-                  to handle projects of any size. Whether you need a single component or bulk supplies 
-                  for a large-scale project, we deliver the products and support you need to succeed.
+                  With a team of experienced valve specialists and a comprehensive inventory, we're equipped 
+                  to handle projects of any size. Whether you need a single valve or bulk supplies 
+                  for a large-scale project, we deliver the products and technical support you need to succeed.
                 </p>
               </div>
             </div>
