@@ -31,7 +31,7 @@ The Private Key is stored here for reference but should only be used if you need
 1. Go to your website's Contact page
 2. Fill out the contact form
 3. Submit the form
-4. Check `arifshaikh@gmail.com` for the email
+4. Check `flowravalves@gmail.com` for the email
 5. You should receive an email with the form submission details
 
 ## Template Variables
@@ -42,7 +42,7 @@ Make sure your EmailJS template (`template_xs15xpo`) includes these variables:
 - `{{phone}}` - Phone number
 - `{{company}}` - Company name
 - `{{message}}` - Message content
-- `{{to_email}}` - Receiving email (arifshaikh@gmail.com)
+- `{{to_email}}` - Receiving email (flowravalves@gmail.com)
 
 ## If You Need to Change Credentials
 

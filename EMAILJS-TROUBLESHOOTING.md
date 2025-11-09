@@ -78,7 +78,7 @@ After updating your template:
 2. Go to your website's Contact page
 3. Fill out and submit the form
 4. Check the browser console for any errors
-5. Check `arifshaikh@gmail.com` for the email
+5. Check `flowravalves@gmail.com` for the email
 
 ## Still Not Working?
 

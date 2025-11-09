@@ -8,7 +8,7 @@ Your EmailJS template (`template_xs15xpo`) uses these variables:
 - `{{phone}}` - Phone number
 - `{{company}}` - Company name
 - `{{message}}` - Message content
-- `{{to_email}}` - Receiving email (arifshaikh@gmail.com)
+- `{{to_email}}` - Receiving email (flowravalves@gmail.com)
 
 ## Code is Updated
 
@@ -34,7 +34,7 @@ The contact form now sends:
   phone: "Phone number or 'Not provided'",
   company: "Company name or 'Not provided'",
   message: "User's message",
-  to_email: "arifshaikh@gmail.com",
+  to_email: "flowravalves@gmail.com",
   reply_to: "user@example.com" // For reply functionality
 }
 ```
@@ -44,7 +44,7 @@ The contact form now sends:
 1. Go to your Contact page
 2. Fill out the form
 3. Submit
-4. Check `arifshaikh@gmail.com` for the beautifully formatted email!
+4. Check `flowravalves@gmail.com` for the beautifully formatted email!
 
 ## Your Template Looks Great! 🎉
 

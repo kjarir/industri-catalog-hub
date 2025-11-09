@@ -60,7 +60,7 @@ const Contact = () => {
         message: formData.message.trim(),
         user_message: formData.message.trim(),
         // Recipient email (must be set in EmailJS template settings as "To Email")
-        to_email: 'arifshaikh@gmail.com',
+        to_email: 'flowravalves@gmail.com',
         // Reply-to email
         reply_to: formData.email.trim(),
         // Website URL for links
@@ -68,7 +68,7 @@ const Contact = () => {
       };
 
       // Send email using EmailJS
-      // Note: The "To Email" must be set in EmailJS template settings to: arifshaikh@gmail.com
+      // Note: The "To Email" must be set in EmailJS template settings to: flowravalves@gmail.com
       // Format: emailjs.send(serviceId, templateId, templateParams, publicKey)
       const response = await emailjs.send(
         emailjsConfig.serviceId,
@@ -107,7 +107,7 @@ const Contact = () => {
       
       if (error?.status === 422) {
         if (error?.text?.includes('recipients address is empty')) {
-          errorMessage = 'EmailJS Error: The "To Email" field is empty in your template settings. Please go to EmailJS Dashboard > Email Templates > Edit template_xs15xpo > Set "To Email" to: arifshaikh@gmail.com';
+          errorMessage = 'EmailJS Error: The "To Email" field is empty in your template settings. Please go to EmailJS Dashboard > Email Templates > Edit template_xs15xpo > Set "To Email" to: flowravalves@gmail.com';
         } else {
           errorMessage = `EmailJS Error: ${error.text || 'Template configuration error. Please check your EmailJS template settings.'}`;
         }
@@ -277,7 +277,7 @@ const Contact = () => {
                     <div>
                       <h3 className="font-semibold mb-1">Phone</h3>
                       <a href="tel:+919372300603" className="text-muted-foreground hover:text-primary transition-colors">
-                        +91 9372300603
+                        7208994885
                       </a>
                     </div>
                   </div>
@@ -288,8 +288,8 @@ const Contact = () => {
                     </div>
                     <div>
                       <h3 className="font-semibold mb-1">Email</h3>
-                      <a href="mailto:arifshaikh@gmail.com" className="text-muted-foreground hover:text-primary transition-colors">
-                        arifshaikh@gmail.com 
+                      <a href="mailto:flowravalves@gmail.com" className="text-muted-foreground hover:text-primary transition-colors">
+                        flowravalves@gmail.com 
                       </a>
                     </div>
                   </div>

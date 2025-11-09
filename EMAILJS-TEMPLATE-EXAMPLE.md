@@ -14,7 +14,7 @@
 
 **Service:** `service_u54dwa9` (make sure this is selected)
 
-**To Email:** `arifshaikh@gmail.com` (or leave blank if using template variable)
+**To Email:** `flowravalves@gmail.com` (or leave blank if using template variable)
 
 **From Name:** Flowra Valves Contact Form
 
@@ -74,7 +74,7 @@ Reply to: {{reply_to}}
 1. Go to your website's Contact page
 2. Fill out the form
 3. Submit
-4. Check `arifshaikh@gmail.com` for the email
+4. Check `flowravalves@gmail.com` for the email
 
 ## Alternative: If Your Template Uses Different Variable Names
 
@@ -92,6 +92,6 @@ If your template already has different variable names, tell me what they are and
 After saving your template, verify:
 - ✅ Template is active
 - ✅ Template is connected to service `service_u54dwa9`
-- ✅ To Email is set to `arifshaikh@gmail.com` (or uses `{{to_email}}` variable)
+- ✅ To Email is set to `flowravalves@gmail.com` (or uses `{{to_email}}` variable)
 - ✅ All variables in template match: `user_name`, `user_email`, `phone`, `company`, `message`, `reply_to`
 

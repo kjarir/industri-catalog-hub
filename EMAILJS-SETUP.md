@@ -19,7 +19,7 @@ You need to create an email template in your EmailJS dashboard.
    - `{{phone}}` - Sender's phone number
    - `{{company}}` - Sender's company
    - `{{message}}` - Message content
-   - `{{to_email}}` - Your receiving email (arifshaikh@gmail.com)
+   - `{{to_email}}` - Your receiving email (flowravalves@gmail.com)
 
 **Example Template:**
 ```
@@ -80,7 +80,7 @@ export const emailjsConfig = {
 
 1. Fill out the contact form on your website
 2. Submit the form
-3. Check your email (arifshaikh@gmail.com) for the message
+3. Check your email (flowravalves@gmail.com) for the message
 4. You should also see a success toast notification
 
 ## Troubleshooting
