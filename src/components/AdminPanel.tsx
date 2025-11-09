@@ -75,6 +75,21 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
     }
   }, [user]);
 
+  // Disable Lenis smooth scroll when admin panel is open
+  useEffect(() => {
+    if (isOpen && isAuthenticated) {
+      const lenis = (window as any).lenis;
+      if (lenis) {
+        lenis.stop();
+      }
+      return () => {
+        if (lenis) {
+          lenis.start();
+        }
+      };
+    }
+  }, [isOpen, isAuthenticated]);
+
   const checkAdminRole = async () => {
     if (!user) return;
 
@@ -286,10 +301,10 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
 
   return (
     <>
-      <div className="fixed inset-0 bg-background z-50 overflow-auto">
-        <div className="container mx-auto px-4 py-8">
+      <div className="fixed inset-0 bg-background z-50 flex flex-col">
+        <div className="container mx-auto px-4 py-4 flex-shrink-0 border-b border-border">
           {/* Header */}
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex justify-between items-center">
             <h1 className="text-3xl font-bold">Admin Panel</h1>
             <div className="flex gap-2">
               <Button variant="outline" onClick={handleLogout}>
@@ -301,6 +316,16 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
               </Button>
             </div>
           </div>
+        </div>
+        <div 
+          className="flex-1 overflow-y-auto overscroll-contain"
+          style={{ 
+            WebkitOverflowScrolling: 'touch',
+            scrollBehavior: 'auto'
+          }}
+          data-lenis-prevent
+        >
+          <div className="container mx-auto px-4 py-8">
 
           {/* Tabs for Products and Categories */}
           <Tabs defaultValue="products" className="space-y-4">
@@ -322,7 +347,7 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
+                  <div className="space-y-4 max-h-[60vh] overflow-y-auto overscroll-contain pr-2">
                     {products?.map((product) => (
                       <div
                         key={product.id}
@@ -389,7 +414,7 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
+                  <div className="space-y-4 max-h-[60vh] overflow-y-auto overscroll-contain pr-2">
                     {/* Parent Categories */}
                     {organizedCategories.parents.map((category) => {
                       const subcategories = organizedCategories.children.filter(
@@ -471,6 +496,7 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
               </Card>
             </TabsContent>
           </Tabs>
+          </div>
         </div>
       </div>
 

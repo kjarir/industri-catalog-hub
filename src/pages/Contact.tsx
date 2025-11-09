@@ -40,30 +40,25 @@ const Contact = () => {
       }
 
       // Prepare template parameters for EmailJS
-      // Sending all variable variations to match your template HTML which uses multiple variable names
+      // IMPORTANT: Your EmailJS template HTML currently has multiple variables concatenated like:
+      // {{user_name}}{{from_name}}{{name}} which causes values to appear 3 times!
+      // 
+      // TO FIX: Go to EmailJS Dashboard > Email Templates > Edit template_xs15xpo
+      // Replace {{user_name}}{{from_name}}{{name}} with just {{from_name}}
+      // Replace {{user_email}}{{from_email}}{{email}} with just {{from_email}}
+      // Replace {{phone}}{{phone_number}} with just {{phone}}
+      // Replace {{company}}{{company_name}} with just {{company}}
+      // Replace {{message}}{{user_message}} with just {{message}}
+      //
+      // Primary variables (use these in your template):
       const templateParams: Record<string, string> = {
-        // Name - your template uses: {{user_name}}{{from_name}}{{name}} (will use first one that works)
-        user_name: formData.name.trim(),
         from_name: formData.name.trim(),
-        name: formData.name.trim(),
-        // Email - your template uses: {{user_email}}{{from_email}}{{email}}
-        user_email: formData.email.trim(),
         from_email: formData.email.trim(),
-        email: formData.email.trim(),
-        // Phone - your template uses: {{phone}}{{phone_number}}
         phone: (formData.phone || 'Not provided').trim(),
-        phone_number: (formData.phone || 'Not provided').trim(),
-        // Company - your template uses: {{company}}{{company_name}}
         company: (formData.company || 'Not provided').trim(),
-        company_name: (formData.company || 'Not provided').trim(),
-        // Message - your template uses: {{message}}{{user_message}}
         message: formData.message.trim(),
-        user_message: formData.message.trim(),
-        // Recipient email (must be set in EmailJS template settings as "To Email")
         to_email: 'flowravalves@gmail.com',
-        // Reply-to email
         reply_to: formData.email.trim(),
-        // Website URL for links
         website_url: window.location.origin,
       };
 
@@ -277,7 +272,7 @@ const Contact = () => {
                     <div>
                       <h3 className="font-semibold mb-1">Phone</h3>
                       <a href="tel:+919372300603" className="text-muted-foreground hover:text-primary transition-colors">
-                        7208994885
+                        +91 7208994885
                       </a>
                     </div>
                   </div>
