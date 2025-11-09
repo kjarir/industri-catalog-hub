@@ -24,8 +24,7 @@ export const Hero = () => {
             <span className="block text-primary">& Flow Control Solutions</span>
           </h1>
           <p className="text-xl text-muted-foreground mb-8 leading-relaxed animate-slide-up">
-            FlowraValves delivers precision-engineered valves and flow control components. 
-            From gate valves to ball valves, we provide reliable solutions for critical industrial applications.
+          Welcome to Flowra Valves, a trusted name in high-quality fittings and valves for industrial, commercial, and engineering applications. With a commitment to precision, durability, and performance, we provide a comprehensive range of products designed to meet the demanding needs of modern industries.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
             <Link to="/products">

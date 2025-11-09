@@ -16,14 +16,16 @@ export const Navbar = () => {
   return (
     <nav className="bg-background border-b border-border sticky top-0 z-50 shadow-sm">
       <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-16 md:h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 hover-scale">
-            <div className="w-10 h-10 bg-gradient-hero rounded-lg flex items-center justify-center shadow-card">
-              <span className="text-primary-foreground font-bold text-xl">FV</span>
-            </div>
-            <span className="text-xl font-bold text-foreground hidden sm:block">
-              FlowraValves
+          <Link to="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+            <img 
+              src="/flowravalves.png" 
+              alt="Flowra Valves Logo" 
+              className="h-12 md:h-14 w-auto object-contain"
+            />
+            <span className="text-lg md:text-xl font-bold text-foreground hidden sm:block">
+              {/* Flowra Valves */}
             </span>
           </Link>
 

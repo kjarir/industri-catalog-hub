@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { Mail, Phone, MapPin, Send } from 'lucide-react';
 import emailjs from '@emailjs/browser';
+import { emailjsConfig, isEmailjsConfigured } from '@/lib/emailjs.config';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -24,16 +25,57 @@ const Contact = () => {
     setIsSubmitting(true);
 
     try {
-      // EmailJS integration placeholder
-      // You'll need to configure EmailJS with your service ID, template ID, and public key
-      // await emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', formData, 'YOUR_PUBLIC_KEY');
-      
-      // For now, just show success message
+      // Check if EmailJS is configured
+      if (!isEmailjsConfigured()) {
+        throw new Error('EmailJS is not configured. Please set up your Template ID and Public Key.');
+      }
+
+      // Prepare template parameters for EmailJS
+      // Sending all variable variations to match your template HTML which uses multiple variable names
+      const templateParams: Record<string, string> = {
+        // Name - your template uses: {{user_name}}{{from_name}}{{name}} (will use first one that works)
+        user_name: formData.name.trim(),
+        from_name: formData.name.trim(),
+        name: formData.name.trim(),
+        // Email - your template uses: {{user_email}}{{from_email}}{{email}}
+        user_email: formData.email.trim(),
+        from_email: formData.email.trim(),
+        email: formData.email.trim(),
+        // Phone - your template uses: {{phone}}{{phone_number}}
+        phone: (formData.phone || 'Not provided').trim(),
+        phone_number: (formData.phone || 'Not provided').trim(),
+        // Company - your template uses: {{company}}{{company_name}}
+        company: (formData.company || 'Not provided').trim(),
+        company_name: (formData.company || 'Not provided').trim(),
+        // Message - your template uses: {{message}}{{user_message}}
+        message: formData.message.trim(),
+        user_message: formData.message.trim(),
+        // Recipient email (must be set in EmailJS template settings as "To Email")
+        to_email: 'arifshaikh@gmail.com',
+        // Reply-to email
+        reply_to: formData.email.trim(),
+        // Website URL for links
+        website_url: window.location.origin,
+      };
+
+      // Send email using EmailJS
+      // Note: The "To Email" must be set in EmailJS template settings to: arifshaikh@gmail.com
+      // Format: emailjs.send(serviceId, templateId, templateParams, publicKey)
+      const response = await emailjs.send(
+        emailjsConfig.serviceId,
+        emailjsConfig.templateId,
+        templateParams,
+        emailjsConfig.publicKey
+      );
+
+      console.log('EmailJS Success:', response);
+
       toast({
         title: 'Message Sent!',
         description: 'Thank you for contacting us. We\'ll get back to you soon.',
       });
 
+      // Reset form
       setFormData({
         name: '',
         email: '',
@@ -41,10 +83,38 @@ const Contact = () => {
         company: '',
         message: '',
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('EmailJS Error Details:', {
+        error,
+        status: error?.status,
+        text: error?.text,
+        message: error?.message,
+        serviceId: emailjsConfig.serviceId,
+        templateId: emailjsConfig.templateId,
+      });
+
+      // Provide more helpful error messages
+      let errorMessage = 'Failed to send message. Please try again.';
+      
+      if (error?.status === 422) {
+        if (error?.text?.includes('recipients address is empty')) {
+          errorMessage = 'EmailJS Error: The "To Email" field is empty in your template settings. Please go to EmailJS Dashboard > Email Templates > Edit template_xs15xpo > Set "To Email" to: arifshaikh@gmail.com';
+        } else {
+          errorMessage = `EmailJS Error: ${error.text || 'Template configuration error. Please check your EmailJS template settings.'}`;
+        }
+      } else if (error?.status === 400) {
+        errorMessage = 'Invalid request. Please check your EmailJS configuration.';
+      } else if (error?.status === 401) {
+        errorMessage = 'Authentication failed. Please check your Public Key.';
+      } else if (error?.text) {
+        errorMessage = `EmailJS Error: ${error.text}`;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
       toast({
-        title: 'Error',
-        description: 'Failed to send message. Please try again.',
+        title: 'Error Sending Message',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -160,8 +230,9 @@ const Contact = () => {
                     </div>
                     <div>
                       <h3 className="font-semibold mb-1">Phone</h3>
-                      <p className="text-muted-foreground">+1 (555) 123-4567</p>
-                      <p className="text-muted-foreground text-sm">Mon-Fri, 8am-6pm EST</p>
+                      <a href="tel:+919372300603" className="text-muted-foreground hover:text-primary transition-colors">
+                        +91 9372300603
+                      </a>
                     </div>
                   </div>
 
@@ -171,8 +242,9 @@ const Contact = () => {
                     </div>
                     <div>
                       <h3 className="font-semibold mb-1">Email</h3>
-                      <p className="text-muted-foreground">info@flowravalves.com</p>
-                      <p className="text-muted-foreground">sales@flowravalves.com</p>
+                      <a href="mailto:arifshaikh@gmail.com" className="text-muted-foreground hover:text-primary transition-colors">
+                        arifshaikh@gmail.com 
+                      </a>
                     </div>
                   </div>
 
@@ -181,10 +253,9 @@ const Contact = () => {
                       <MapPin className="h-6 w-6 text-primary-foreground" />
                     </div>
                     <div>
-                      <h3 className="font-semibold mb-1">Address</h3>
-                      <p className="text-muted-foreground">123 Industrial Avenue</p>
-                      <p className="text-muted-foreground">City, State 12345</p>
-                      <p className="text-muted-foreground">United States</p>
+                      <h3 className="font-semibold mb-1">Location</h3>
+                      <p className="text-muted-foreground">India</p>
+                      <p className="text-muted-foreground text-sm">Serving industrial clients globally</p>
                     </div>
                   </div>
                 </CardContent>
@@ -192,13 +263,16 @@ const Contact = () => {
 
               <Card className="bg-gradient-hero text-primary-foreground">
                 <CardContent className="pt-6">
-                  <h3 className="text-xl font-semibold mb-2">Need Urgent Support?</h3>
+                  <h3 className="text-xl font-semibold mb-2">Get in Touch</h3>
                   <p className="opacity-90 mb-4">
-                    Our technical team is available 24/7 for emergency support and critical issues.
+                    Contact us for inquiries, quotes, or technical support. We're here to help with all your valve and fittings needs.
                   </p>
-                  <Button variant="secondary" className="w-full">
-                    Call Emergency Hotline
-                  </Button>
+                  <a href="tel:+919372300603">
+                    <Button variant="secondary" className="w-full">
+                      <Phone className="mr-2 h-4 w-4" />
+                      Call Us Now
+                    </Button>
+                  </a>
                 </CardContent>
               </Card>
             </div>
