@@ -76,7 +76,7 @@ export const Footer = () => {
               </li>
               <li className="flex items-center space-x-2 text-muted-foreground">
                 <MapPin className="h-4 w-4" />
-                <span className="text-sm">India</span>
+                <span className="text-sm">209 Building 3 S.G Chemical MMRDA Bharat Society, Vishnu Nagar, Chembur East, Mumbai, Maharashtra, 400074</span>
               </li>
             </ul>
           </div>

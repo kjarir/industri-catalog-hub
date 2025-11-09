@@ -300,7 +300,7 @@ const Contact = () => {
                     </div>
                     <div>
                       <h3 className="font-semibold mb-1">Location</h3>
-                      <p className="text-muted-foreground">India</p>
+                      <p className="text-muted-foreground">209 Building 3 S.G Chemical MMRDA Bharat Society, Vishnu Nagar, Chembur East, Mumbai, Maharashtra, 400074</p>
                       <p className="text-muted-foreground text-sm">Serving industrial clients globally</p>
                     </div>
                   </div>
