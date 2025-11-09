@@ -10,8 +10,10 @@ const Index = () => {
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       // Ctrl+Shift+A to open admin panel
-      if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+      // Check for both 'A' and 'a' to handle different keyboard layouts
+      if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a' || e.code === 'KeyA')) {
         e.preventDefault();
+        console.log('Admin panel shortcut triggered!');
         setIsAdminPanelOpen(true);
       }
     };
