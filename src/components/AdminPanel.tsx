@@ -59,7 +59,19 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
   // Check if bucket exists when admin panel opens
   useEffect(() => {
     if (isOpen && isAuthenticated) {
-      checkBucketExists().then(setBucketExists);
+      checkBucketExists()
+        .then((exists) => {
+          setBucketExists(exists);
+          if (exists) {
+            console.log('✅ Storage bucket is available');
+          } else {
+            console.warn('⚠️ Storage bucket not found or not accessible');
+          }
+        })
+        .catch((error) => {
+          console.error('Error checking bucket:', error);
+          setBucketExists(null); // Set to null to show unknown state
+        });
     }
   }, [isOpen, isAuthenticated]);
 
@@ -200,13 +212,7 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
 
     setIsUploadingImage(true);
     try {
-      // Re-check bucket before upload
-      const exists = await checkBucketExists();
-      if (!exists) {
-        setBucketExists(false);
-        throw new Error('Storage bucket "product-images" not found. Please create it in Supabase Dashboard first.');
-      }
-
+      // Try to upload directly - the upload function will handle bucket checking
       const imageUrl = await uploadProductImage(file, editingProduct?.id);
       setFormData({ ...formData, image: imageUrl });
       setBucketExists(true); // Update state after successful upload
@@ -691,12 +697,19 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
                         variant="ghost"
                         size="sm"
                         onClick={async () => {
+                          setBucketExists(null); // Show loading state
                           const exists = await checkBucketExists();
                           setBucketExists(exists);
                           if (exists) {
                             toast({
                               title: 'Bucket Found!',
                               description: 'Storage bucket is now available. You can upload images.',
+                            });
+                          } else {
+                            toast({
+                              title: 'Bucket Not Found',
+                              description: 'Please verify the bucket name is exactly "product-images" and is set to Public in Supabase Dashboard.',
+                              variant: 'destructive',
                             });
                           }
                         }}
@@ -715,6 +728,9 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
                       <li>Name: <strong className="font-mono">product-images</strong> (exact name)</li>
                       <li>Set to <strong>Public</strong> (important!)</li>
                       <li>Click <strong>"Create bucket"</strong></li>
+                      <li className="font-semibold mt-2">⚠️ IMPORTANT: Set up Storage Policies!</li>
+                      <li>Go to <strong>Storage → Policies → product-images</strong></li>
+                      <li>Add policies OR run SQL from <code className="bg-yellow-100 dark:bg-yellow-900 px-1 rounded">STORAGE-POLICIES-SETUP.sql</code></li>
                       <li>Click <strong>"Check Again"</strong> button above to verify</li>
                     </ol>
                     <p className="text-xs text-yellow-700 dark:text-yellow-300">
@@ -733,7 +749,7 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
                   type="button"
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploadingImage || bucketExists === false}
+                  disabled={isUploadingImage}
                   className="w-full"
                 >
                   {isUploadingImage ? (
@@ -744,10 +760,15 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
                   ) : (
                     <>
                       <Upload className="mr-2 h-4 w-4" />
-                      {bucketExists === false ? 'Bucket Not Created Yet' : 'Upload Image to Supabase Storage'}
+                      {bucketExists === false ? 'Try Upload Anyway (Bucket Check Failed)' : 'Upload Image to Supabase Storage'}
                     </>
                   )}
                 </Button>
+                {bucketExists === null && (
+                  <p className="text-xs text-muted-foreground mt-1 text-center">
+                    Checking bucket status...
+                  </p>
+                )}
               </div>
 
               {/* Image Preview */}

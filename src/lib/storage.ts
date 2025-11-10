@@ -24,22 +24,26 @@ export const uploadProductImage = async (
       throw new Error('Image size must be less than 5MB');
     }
 
-    // Check if bucket exists first
-    const { data: buckets, error: listError } = await supabase.storage.listBuckets();
-    if (listError) {
-      throw new Error(`Failed to access storage: ${listError.message}`);
-    }
-
-    const bucketExists = buckets?.some(bucket => bucket.name === BUCKET_NAME);
-    if (!bucketExists) {
-      throw new Error(
-        `Storage bucket "${BUCKET_NAME}" not found. Please create it in Supabase Dashboard:\n` +
-        `1. Go to Storage in Supabase Dashboard\n` +
-        `2. Click "New bucket"\n` +
-        `3. Name it: "${BUCKET_NAME}"\n` +
-        `4. Set it to Public\n` +
-        `5. Click "Create bucket"`
-      );
+    // Try to verify bucket exists by attempting to list files
+    // This is more reliable than listBuckets() which may require admin permissions
+    const { error: testError } = await supabase.storage
+      .from(BUCKET_NAME)
+      .list('', { limit: 1 });
+    
+    if (testError) {
+      // If we get a "Bucket not found" error, the bucket doesn't exist
+      if (testError.message.includes('not found') || testError.message.includes('Bucket')) {
+        throw new Error(
+          `Storage bucket "${BUCKET_NAME}" not found. Please create it in Supabase Dashboard:\n` +
+          `1. Go to Storage in Supabase Dashboard\n` +
+          `2. Click "New bucket"\n` +
+          `3. Name it: "${BUCKET_NAME}"\n` +
+          `4. Set it to Public\n` +
+          `5. Click "Create bucket"`
+        );
+      }
+      // Other errors might be permission-related, but we'll try to upload anyway
+      console.warn('Bucket access test failed, but continuing:', testError.message);
     }
 
     // Generate unique filename
@@ -59,7 +63,12 @@ export const uploadProductImage = async (
       });
 
     if (error) {
-      if (error.message.includes('Bucket not found')) {
+      console.error('Upload error:', error);
+      console.error('Error status:', error.statusCode);
+      console.error('Error message:', error.message);
+      
+      // Check for bucket not found
+      if (error.message?.includes('Bucket not found') || error.message?.includes('not found') || error.statusCode === '404') {
         throw new Error(
           `Storage bucket "${BUCKET_NAME}" not found. Please create it in Supabase Dashboard:\n` +
           `1. Go to Storage in Supabase Dashboard\n` +
@@ -69,7 +78,20 @@ export const uploadProductImage = async (
           `5. Click "Create bucket"`
         );
       }
-      throw error;
+      
+      // Check for permission errors (403)
+      if (error.message?.includes('permission') || error.message?.includes('policy') || error.message?.includes('403') || error.statusCode === '403' || error.statusCode === 403) {
+        throw new Error(
+          `Permission denied. You need to set up Storage Policies:\n` +
+          `1. Go to Supabase Dashboard → Storage → Policies\n` +
+          `2. Click on "product-images" bucket\n` +
+          `3. Add policy for INSERT (upload) for authenticated users\n` +
+          `4. See SUPABASE-STORAGE-SETUP.md for SQL commands`
+        );
+      }
+      
+      // Generic error with more details
+      throw new Error(error.message || `Failed to upload image. Status: ${error.statusCode || 'unknown'}`);
     }
 
     // Get public URL
@@ -120,15 +142,52 @@ export const deleteProductImage = async (imageUrl: string): Promise<void> => {
 
 /**
  * Check if the storage bucket exists
+ * Tries multiple methods to verify bucket existence
  */
 export const checkBucketExists = async (): Promise<boolean> => {
   try {
-    const { data: buckets, error } = await supabase.storage.listBuckets();
-    if (error) {
-      console.error('Error checking buckets:', error);
+    // Method 1: List all buckets
+    const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+    
+    if (listError) {
+      console.warn('Error listing buckets (may not have permission):', listError);
+      
+      // Method 2: Try to access the bucket directly by listing files
+      // This works even if listBuckets() fails due to permissions
+      const { data: files, error: filesError } = await supabase.storage
+        .from(BUCKET_NAME)
+        .list('', { limit: 1 });
+      
+      if (!filesError) {
+        // If we can list files, the bucket exists
+        console.log('Bucket exists (verified by file listing)');
+        return true;
+      }
+      
+      console.error('Cannot verify bucket existence:', filesError);
       return false;
     }
-    return buckets?.some(bucket => bucket.name === BUCKET_NAME) || false;
+    
+    // Check if bucket is in the list
+    const exists = buckets?.some(bucket => bucket.name === BUCKET_NAME) || false;
+    
+    if (exists) {
+      console.log('Bucket exists (verified by bucket list)');
+      return true;
+    }
+    
+    // Method 3: Try to access the bucket directly as fallback
+    const { data: files, error: filesError } = await supabase.storage
+      .from(BUCKET_NAME)
+      .list('', { limit: 1 });
+    
+    if (!filesError) {
+      console.log('Bucket exists (verified by file listing fallback)');
+      return true;
+    }
+    
+    console.log('Bucket does not exist or is not accessible');
+    return false;
   } catch (error) {
     console.error('Error checking bucket existence:', error);
     return false;
