@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Mail } from 'lucide-react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { convertGoogleDriveUrl } from '@/lib/imageUtils';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -19,38 +20,42 @@ const ProductDetail = () => {
   const { data: product, isLoading } = useProduct(id!);
   const imageRef = useRef<HTMLDivElement>(null);
   const infoRef = useRef<HTMLDivElement>(null);
+  const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
+
+  // Reset image states when product changes
+  useEffect(() => {
+    if (product) {
+      setImageError(false);
+      setImageLoading(true);
+    }
+  }, [product?.id]);
 
   useEffect(() => {
     if (!isLoading && product) {
       // Animate image
       if (imageRef.current) {
-        gsap.fromTo(
-          imageRef.current,
-          { opacity: 0, scale: 0.9, x: -30 },
-          {
-            opacity: 1,
-            scale: 1,
-            x: 0,
-            duration: 0.8,
-            ease: 'power3.out',
-          }
-        );
+        gsap.set(imageRef.current, { opacity: 0, scale: 0.9, x: -30 });
+        gsap.to(imageRef.current, {
+          opacity: 1,
+          scale: 1,
+          x: 0,
+          duration: 0.8,
+          ease: 'power3.out',
+        });
       }
 
       // Animate product info
-      if (infoRef.current) {
-        gsap.fromTo(
-          infoRef.current.children,
-          { opacity: 0, y: 30 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.8,
-            stagger: 0.1,
-            ease: 'power3.out',
-            delay: 0.2,
-          }
-        );
+      if (infoRef.current && infoRef.current.children.length > 0) {
+        gsap.set(infoRef.current.children, { opacity: 0, y: 30 });
+        gsap.to(infoRef.current.children, {
+          opacity: 1,
+          y: 0,
+          duration: 0.8,
+          stagger: 0.1,
+          ease: 'power3.out',
+          delay: 0.2,
+        });
       }
     }
   }, [isLoading, product]);
@@ -116,17 +121,50 @@ const ProductDetail = () => {
           <div className="grid md:grid-cols-2 gap-12">
             {/* Product Image */}
             <div ref={imageRef} className="aspect-square overflow-hidden rounded-lg bg-secondary shadow-card group">
-              {product.image ? (
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <span className="text-muted-foreground text-xl">No image available</span>
-                </div>
-              )}
+              {(() => {
+                const imageUrl = convertGoogleDriveUrl(product.image);
+                
+                if (!imageUrl) {
+                  return (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <span className="text-muted-foreground text-xl">No image available</span>
+                    </div>
+                  );
+                }
+
+                if (imageError) {
+                  return (
+                    <div className="w-full h-full flex flex-col items-center justify-center p-4">
+                      <span className="text-muted-foreground text-xl text-center">Image not available</span>
+                      <span className="text-muted-foreground text-sm text-center mt-2">Check Google Drive sharing settings</span>
+                    </div>
+                  );
+                }
+
+                return (
+                  <>
+                    {imageLoading && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-secondary z-10">
+                        <span className="text-muted-foreground">Loading...</span>
+                      </div>
+                    )}
+                    <img
+                      src={imageUrl}
+                      alt={product.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      onLoad={() => setImageLoading(false)}
+                      onError={(e) => {
+                        setImageError(true);
+                        setImageLoading(false);
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                      }}
+                      crossOrigin="anonymous"
+                      referrerPolicy="no-referrer"
+                    />
+                  </>
+                );
+              })()}
             </div>
 
             {/* Product Info */}

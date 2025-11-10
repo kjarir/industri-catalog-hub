@@ -22,47 +22,49 @@ const Home = () => {
   const ctaRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
+    const scrollTriggers: ScrollTrigger[] = [];
+
     // Animate features section
     if (featuresRef.current) {
       const features = featuresRef.current.querySelectorAll('.feature-item');
-      gsap.fromTo(
-        features,
-        { opacity: 0, y: 60, scale: 0.9 },
-        {
-          opacity: 1,
-          y: 0,
-          scale: 1,
-          duration: 0.8,
-          stagger: 0.2,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: featuresRef.current,
-            start: 'top 80%',
-            toggleActions: 'play none none none',
+      if (features.length > 0) {
+        gsap.set(features, { opacity: 0, y: 60, scale: 0.9 });
+        const trigger = ScrollTrigger.create({
+          trigger: featuresRef.current,
+          start: 'top 80%',
+          onEnter: () => {
+            gsap.to(features, {
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              duration: 0.8,
+              stagger: 0.2,
+              ease: 'power3.out',
+            });
           },
-        }
-      );
+        });
+        scrollTriggers.push(trigger);
+      }
     }
 
     // Animate products section header
     if (productsSectionRef.current) {
       const header = productsSectionRef.current.querySelector('.section-header');
       if (header) {
-        gsap.fromTo(
-          header,
-          { opacity: 0, y: 40 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 1,
-            ease: 'power3.out',
-            scrollTrigger: {
-              trigger: productsSectionRef.current,
-              start: 'top 80%',
-              toggleActions: 'play none none none',
-            },
-          }
-        );
+        gsap.set(header, { opacity: 0, y: 40 });
+        const trigger = ScrollTrigger.create({
+          trigger: productsSectionRef.current,
+          start: 'top 80%',
+          onEnter: () => {
+            gsap.to(header, {
+              opacity: 1,
+              y: 0,
+              duration: 1,
+              ease: 'power3.out',
+            });
+          },
+        });
+        scrollTriggers.push(trigger);
       }
     }
 
@@ -70,24 +72,27 @@ const Home = () => {
     if (ctaRef.current) {
       const ctaContent = ctaRef.current.querySelector('.cta-content');
       if (ctaContent) {
-        gsap.fromTo(
-          ctaContent,
-          { opacity: 0, y: 40, scale: 0.95 },
-          {
-            opacity: 1,
-            y: 0,
-            scale: 1,
-            duration: 1,
-            ease: 'power3.out',
-            scrollTrigger: {
-              trigger: ctaRef.current,
-              start: 'top 80%',
-              toggleActions: 'play none none none',
-            },
-          }
-        );
+        gsap.set(ctaContent, { opacity: 0, y: 40, scale: 0.95 });
+        const trigger = ScrollTrigger.create({
+          trigger: ctaRef.current,
+          start: 'top 80%',
+          onEnter: () => {
+            gsap.to(ctaContent, {
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              duration: 1,
+              ease: 'power3.out',
+            });
+          },
+        });
+        scrollTriggers.push(trigger);
       }
     }
+
+    return () => {
+      scrollTriggers.forEach(trigger => trigger?.kill());
+    };
   }, []);
 
   return (

@@ -3,7 +3,12 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import heroImage from '@/assets/hero-industrial.jpg';
+
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 export const Hero = () => {
   const heroRef = useRef<HTMLElement>(null);
@@ -15,48 +20,59 @@ export const Hero = () => {
   useEffect(() => {
     const ctx = gsap.context(() => {
       // Animate background image with parallax effect
-      gsap.fromTo(
-        imageRef.current,
-        { scale: 1.2, opacity: 0 },
-        {
+      if (imageRef.current) {
+        gsap.set(imageRef.current, { scale: 1.2, opacity: 0 });
+        gsap.to(imageRef.current, {
           scale: 1,
           opacity: 1,
           duration: 1.5,
           ease: 'power3.out',
-        }
-      );
+        });
 
-      // Animate title with split text effect
-      gsap.fromTo(
-        titleRef.current,
-        { opacity: 0, y: 50 },
-        {
+        // Parallax effect on scroll
+        ScrollTrigger.create({
+          trigger: heroRef.current,
+          start: 'top top',
+          end: 'bottom top',
+          scrub: true,
+          onUpdate: (self) => {
+            if (imageRef.current) {
+              gsap.set(imageRef.current, {
+                yPercent: 30 * self.progress,
+              });
+            }
+          },
+        });
+      }
+
+      // Animate title
+      if (titleRef.current) {
+        gsap.set(titleRef.current, { opacity: 0, y: 50 });
+        gsap.to(titleRef.current, {
           opacity: 1,
           y: 0,
           duration: 1,
           delay: 0.3,
           ease: 'power3.out',
-        }
-      );
+        });
+      }
 
       // Animate description text
-      gsap.fromTo(
-        textRef.current,
-        { opacity: 0, y: 30 },
-        {
+      if (textRef.current) {
+        gsap.set(textRef.current, { opacity: 0, y: 30 });
+        gsap.to(textRef.current, {
           opacity: 1,
           y: 0,
           duration: 1,
           delay: 0.6,
           ease: 'power3.out',
-        }
-      );
+        });
+      }
 
       // Animate buttons with stagger
-      gsap.fromTo(
-        buttonsRef.current?.children || [],
-        { opacity: 0, y: 20, scale: 0.9 },
-        {
+      if (buttonsRef.current && buttonsRef.current.children.length > 0) {
+        gsap.set(buttonsRef.current.children, { opacity: 0, y: 20, scale: 0.9 });
+        gsap.to(buttonsRef.current.children, {
           opacity: 1,
           y: 0,
           scale: 1,
@@ -64,20 +80,8 @@ export const Hero = () => {
           delay: 0.9,
           stagger: 0.2,
           ease: 'back.out(1.7)',
-        }
-      );
-
-      // Parallax effect on scroll
-      gsap.to(imageRef.current, {
-        yPercent: 30,
-        ease: 'none',
-        scrollTrigger: {
-          trigger: heroRef.current,
-          start: 'top top',
-          end: 'bottom top',
-          scrub: true,
-        },
-      });
+        });
+      }
     }, heroRef);
 
     return () => ctx.revert();

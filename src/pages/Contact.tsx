@@ -127,40 +127,44 @@ const Contact = () => {
   };
 
   useEffect(() => {
+    const scrollTriggers: ScrollTrigger[] = [];
+
     // Animate header
-    if (headerRef.current) {
-      gsap.fromTo(
-        headerRef.current.children,
-        { opacity: 0, y: 30 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.8,
-          stagger: 0.1,
-          ease: 'power3.out',
-        }
-      );
+    if (headerRef.current && headerRef.current.children.length > 0) {
+      gsap.set(headerRef.current.children, { opacity: 0, y: 30 });
+      gsap.to(headerRef.current.children, {
+        opacity: 1,
+        y: 0,
+        duration: 0.8,
+        stagger: 0.1,
+        ease: 'power3.out',
+      });
     }
 
     // Animate form and info cards
     if (formRef.current && infoRef.current) {
-      gsap.fromTo(
-        [formRef.current, infoRef.current],
-        { opacity: 0, x: -30 },
-        {
-          opacity: 1,
-          x: 0,
-          duration: 0.8,
-          stagger: 0.2,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: formRef.current,
-            start: 'top 80%',
-            toggleActions: 'play none none none',
-          },
-        }
-      );
+      gsap.set([formRef.current, infoRef.current], { opacity: 0, x: -30 });
+      const trigger = ScrollTrigger.create({
+        trigger: formRef.current,
+        start: 'top 80%',
+        onEnter: () => {
+          if (formRef.current && infoRef.current) {
+            gsap.to([formRef.current, infoRef.current], {
+              opacity: 1,
+              x: 0,
+              duration: 0.8,
+              stagger: 0.2,
+              ease: 'power3.out',
+            });
+          }
+        },
+      });
+      scrollTriggers.push(trigger);
     }
+
+    return () => {
+      scrollTriggers.forEach(trigger => trigger?.kill());
+    };
   }, []);
 
   return (

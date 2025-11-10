@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, Product } from '@/hooks/useProducts';
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, Category } from '@/hooks/useCategories';
@@ -11,8 +11,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
-import { X, Plus, Edit, Trash2, LogOut, FolderTree } from 'lucide-react';
+import { X, Plus, Edit, Trash2, LogOut, FolderTree, Upload, Image as ImageIcon } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { convertGoogleDriveUrl } from '@/lib/imageUtils';
+import { uploadProductImage, deleteProductImage } from '@/lib/storage';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -50,6 +52,8 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
     image: '',
     specifications: [{ key: '', value: '' }],
   });
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [categoryFormData, setCategoryFormData] = useState({
     name: '',
@@ -162,6 +166,65 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
     setIsProductDialogOpen(true);
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Invalid File',
+        description: 'Please select an image file (JPG, PNG, GIF, etc.)',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'File Too Large',
+        description: 'Image must be less than 5MB. Please compress the image and try again.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsUploadingImage(true);
+    try {
+      const imageUrl = await uploadProductImage(file, editingProduct?.id);
+      setFormData({ ...formData, image: imageUrl });
+      toast({
+        title: 'Image Uploaded',
+        description: 'Image uploaded successfully to Supabase Storage',
+      });
+    } catch (error: any) {
+      const errorMessage = error.message || 'Failed to upload image. Please try again.';
+      
+      // Check if it's a bucket not found error
+      if (errorMessage.includes('Bucket not found') || errorMessage.includes('not found')) {
+        toast({
+          title: 'Storage Bucket Not Found',
+          description: 'Please create the "product-images" bucket in Supabase Dashboard → Storage → New bucket (set to Public). See SUPABASE-STORAGE-SETUP.md for details. You can use manual URL input below for now.',
+          variant: 'destructive',
+          duration: 10000, // Show for 10 seconds
+        });
+      } else {
+        toast({
+          title: 'Upload Failed',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+      }
+    } finally {
+      setIsUploadingImage(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   const handleSubmitProduct = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -182,7 +245,21 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
 
   const handleDeleteProduct = async () => {
     if (deleteProductId) {
+      // Find the product to get its image URL
+      const productToDelete = products?.find(p => p.id === deleteProductId);
+      
+      // Delete the product
       await deleteProduct.mutateAsync(deleteProductId);
+      
+      // Delete the image from storage if it exists and is from Supabase
+      if (productToDelete?.image && productToDelete.image.includes('supabase.co')) {
+        try {
+          await deleteProductImage(productToDelete.image);
+        } catch (error) {
+          console.error('Failed to delete image from storage:', error);
+        }
+      }
+      
       setDeleteProductId(null);
     }
   };
@@ -354,13 +431,20 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
                         className="flex items-center justify-between p-4 border border-border rounded-lg"
                       >
                         <div className="flex items-center gap-4">
-                          {product.image && (
-                            <img
-                              src={product.image}
-                              alt={product.name}
-                              className="w-16 h-16 object-cover rounded"
-                            />
-                          )}
+                          {(() => {
+                            const imageUrl = convertGoogleDriveUrl(product.image);
+                            return imageUrl ? (
+                              <img
+                                src={imageUrl}
+                                alt={product.name}
+                                className="w-16 h-16 object-cover rounded"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                }}
+                              />
+                            ) : null;
+                          })()}
                           <div>
                             <h3 className="font-semibold">{product.name}</h3>
                             <p className="text-sm text-muted-foreground">{product.category}</p>
@@ -559,12 +643,90 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Image URL</label>
-              <Input
-                type="url"
-                value={formData.image}
-                onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-              />
+              <label className="block text-sm font-medium mb-2">Product Image</label>
+              
+              {/* File Upload */}
+              <div className="mb-3">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  id="image-upload"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingImage}
+                  className="w-full"
+                >
+                  {isUploadingImage ? (
+                    <>
+                      <Upload className="mr-2 h-4 w-4 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload Image to Supabase Storage
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {/* Image Preview */}
+              {formData.image && (
+                <div className="mb-3">
+                  <div className="relative w-full h-48 border border-border rounded-lg overflow-hidden bg-secondary">
+                    <img
+                      src={formData.image}
+                      alt="Product preview"
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent && !parent.querySelector('.image-error')) {
+                          const errorDiv = document.createElement('div');
+                          errorDiv.className = 'image-error w-full h-full flex items-center justify-center';
+                          errorDiv.innerHTML = '<span class="text-muted-foreground text-sm">Failed to load image</span>';
+                          parent.appendChild(errorDiv);
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 right-2 bg-background/80 hover:bg-background"
+                      onClick={() => setFormData({ ...formData, image: '' })}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Manual URL Input (Alternative) */}
+              <div>
+                <label className="block text-xs font-medium mb-1 text-muted-foreground">
+                  Or paste image URL manually:
+                </label>
+                <Input
+                  type="url"
+                  value={formData.image}
+                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                  placeholder="Paste image URL (Google Drive, Imgur, etc.)"
+                />
+              </div>
+
+              <p className="text-xs text-muted-foreground mt-2">
+                <strong>Recommended:</strong> Upload directly to Supabase Storage (500MB free tier)
+                <br />
+                <strong>Storage estimate:</strong> ~1,000-5,000 products (depending on image size)
+              </p>
             </div>
 
             <div>

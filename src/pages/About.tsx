@@ -16,66 +16,76 @@ const About = () => {
   const valuesRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
+    const scrollTriggers: ScrollTrigger[] = [];
+
     // Hero animation
     if (heroRef.current) {
       const title = heroRef.current.querySelector('h1');
       const subtitle = heroRef.current.querySelector('p');
       
-      gsap.fromTo(
-        [title, subtitle],
-        { opacity: 0, y: 30 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 1,
-          stagger: 0.2,
-          ease: 'power3.out',
+      if (title || subtitle) {
+        const elements = [title, subtitle].filter(Boolean) as HTMLElement[];
+        if (elements.length > 0) {
+          gsap.set(elements, { opacity: 0, y: 30 });
+          gsap.to(elements, {
+            opacity: 1,
+            y: 0,
+            duration: 1,
+            stagger: 0.2,
+            ease: 'power3.out',
+          });
         }
-      );
+      }
     }
 
     // Content sections animation
     if (contentRef.current) {
       const sections = contentRef.current.querySelectorAll('div > div');
-      gsap.fromTo(
-        sections,
-        { opacity: 0, y: 40 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.8,
-          stagger: 0.15,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: contentRef.current,
-            start: 'top 80%',
-            toggleActions: 'play none none none',
+      if (sections.length > 0) {
+        gsap.set(sections, { opacity: 0, y: 40 });
+        const trigger = ScrollTrigger.create({
+          trigger: contentRef.current,
+          start: 'top 80%',
+          onEnter: () => {
+            gsap.to(sections, {
+              opacity: 1,
+              y: 0,
+              duration: 0.8,
+              stagger: 0.15,
+              ease: 'power3.out',
+            });
           },
-        }
-      );
+        });
+        scrollTriggers.push(trigger);
+      }
     }
 
     // Values cards animation
     if (valuesRef.current) {
       const cards = valuesRef.current.querySelectorAll('[class*="Card"]');
-      gsap.fromTo(
-        cards,
-        { opacity: 0, y: 50, scale: 0.9 },
-        {
-          opacity: 1,
-          y: 0,
-          scale: 1,
-          duration: 0.8,
-          stagger: 0.2,
-          ease: 'back.out(1.7)',
-          scrollTrigger: {
-            trigger: valuesRef.current,
-            start: 'top 80%',
-            toggleActions: 'play none none none',
+      if (cards.length > 0) {
+        gsap.set(cards, { opacity: 0, y: 50, scale: 0.9 });
+        const trigger = ScrollTrigger.create({
+          trigger: valuesRef.current,
+          start: 'top 80%',
+          onEnter: () => {
+            gsap.to(cards, {
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              duration: 0.8,
+              stagger: 0.2,
+              ease: 'back.out(1.7)',
+            });
           },
-        }
-      );
+        });
+        scrollTriggers.push(trigger);
+      }
     }
+
+    return () => {
+      scrollTriggers.forEach(trigger => trigger?.kill());
+    };
   }, []);
 
   return (

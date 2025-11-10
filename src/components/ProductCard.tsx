@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowRight } from 'lucide-react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { convertGoogleDriveUrl } from '@/lib/imageUtils';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -31,16 +32,19 @@ export const ProductCard = ({ id, name, category, description, image }: ProductC
     gsap.set(card, { opacity: 0, y: 50, scale: 0.95 });
 
     // Animate in on scroll
-    gsap.to(card, {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      duration: 0.8,
-      ease: 'power3.out',
-      scrollTrigger: {
-        trigger: card,
-        start: 'top 85%',
-        toggleActions: 'play none none none',
+    const scrollTrigger = ScrollTrigger.create({
+      trigger: card,
+      start: 'top 85%',
+      onEnter: () => {
+        if (card) {
+          gsap.to(card, {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 0.8,
+            ease: 'power3.out',
+          });
+        }
       },
     });
 
@@ -53,11 +57,14 @@ export const ProductCard = ({ id, name, category, description, image }: ProductC
         ease: 'power2.out',
       });
       if (imageRef.current) {
-        gsap.to(imageRef.current.querySelector('img'), {
-          scale: 1.15,
-          duration: 0.5,
-          ease: 'power2.out',
-        });
+        const img = imageRef.current.querySelector('img');
+        if (img) {
+          gsap.to(img, {
+            scale: 1.15,
+            duration: 0.5,
+            ease: 'power2.out',
+          });
+        }
       }
     };
 
@@ -69,11 +76,14 @@ export const ProductCard = ({ id, name, category, description, image }: ProductC
         ease: 'power2.out',
       });
       if (imageRef.current) {
-        gsap.to(imageRef.current.querySelector('img'), {
-          scale: 1,
-          duration: 0.5,
-          ease: 'power2.out',
-        });
+        const img = imageRef.current.querySelector('img');
+        if (img) {
+          gsap.to(img, {
+            scale: 1,
+            duration: 0.5,
+            ease: 'power2.out',
+          });
+        }
       }
     };
 
@@ -81,20 +91,46 @@ export const ProductCard = ({ id, name, category, description, image }: ProductC
     card.addEventListener('mouseleave', handleMouseLeave);
 
     return () => {
+      scrollTrigger?.kill();
       card.removeEventListener('mouseenter', handleMouseEnter);
       card.removeEventListener('mouseleave', handleMouseLeave);
     };
   }, []);
 
+  const imageUrl = convertGoogleDriveUrl(image);
+  const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
+
   return (
     <Card ref={cardRef} className="group overflow-hidden">
       <div ref={imageRef} className="aspect-square overflow-hidden bg-secondary relative">
-        {image ? (
-          <img
-            src={image}
-            alt={name}
-            className="w-full h-full object-cover"
-          />
+        {imageUrl && !imageError ? (
+          <>
+            {imageLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-secondary">
+                <span className="text-muted-foreground text-sm">Loading...</span>
+              </div>
+            )}
+            <img
+              src={imageUrl}
+              alt={name}
+              className="w-full h-full object-cover"
+              onLoad={() => setImageLoading(false)}
+              onError={(e) => {
+                setImageError(true);
+                setImageLoading(false);
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+              }}
+              crossOrigin="anonymous"
+              referrerPolicy="no-referrer"
+            />
+          </>
+        ) : imageError ? (
+          <div className="w-full h-full flex flex-col items-center justify-center p-4">
+            <span className="text-muted-foreground text-sm text-center">Image not available</span>
+            <span className="text-muted-foreground text-xs text-center mt-2">Check Google Drive sharing settings</span>
+          </div>
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <span className="text-muted-foreground">No image</span>

@@ -38,40 +38,43 @@ const Products = () => {
   }, []);
 
   useEffect(() => {
+    const scrollTriggers: ScrollTrigger[] = [];
+
     // Animate header
-    if (headerRef.current) {
-      gsap.fromTo(
-        headerRef.current.children,
-        { opacity: 0, y: 30 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.8,
-          stagger: 0.1,
-          ease: 'power3.out',
-        }
-      );
+    if (headerRef.current && headerRef.current.children.length > 0) {
+      gsap.set(headerRef.current.children, { opacity: 0, y: 30 });
+      gsap.to(headerRef.current.children, {
+        opacity: 1,
+        y: 0,
+        duration: 0.8,
+        stagger: 0.1,
+        ease: 'power3.out',
+      });
     }
 
     // Animate filter section
     if (filterRef.current) {
-      gsap.fromTo(
-        filterRef.current,
-        { opacity: 0, y: 20 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.6,
-          delay: 0.3,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: filterRef.current,
-            start: 'top 90%',
-            toggleActions: 'play none none none',
-          },
-        }
-      );
+      gsap.set(filterRef.current, { opacity: 0, y: 20 });
+      const trigger = ScrollTrigger.create({
+        trigger: filterRef.current,
+        start: 'top 90%',
+        onEnter: () => {
+          if (filterRef.current) {
+            gsap.to(filterRef.current, {
+              opacity: 1,
+              y: 0,
+              duration: 0.6,
+              ease: 'power3.out',
+            });
+          }
+        },
+      });
+      scrollTriggers.push(trigger);
     }
+
+    return () => {
+      scrollTriggers.forEach(trigger => trigger?.kill());
+    };
   }, []);
 
   return (
