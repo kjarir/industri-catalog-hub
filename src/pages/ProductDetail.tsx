@@ -120,7 +120,7 @@ const ProductDetail = () => {
           {/* Product Details */}
           <div className="grid md:grid-cols-2 gap-12">
             {/* Product Image */}
-            <div ref={imageRef} className="aspect-square overflow-hidden rounded-lg bg-secondary shadow-card group">
+            <div ref={imageRef} className="aspect-square overflow-hidden rounded-lg bg-secondary shadow-card group relative">
               {(() => {
                 const imageUrl = convertGoogleDriveUrl(product.image);
                 
@@ -132,15 +132,6 @@ const ProductDetail = () => {
                   );
                 }
 
-                if (imageError) {
-                  return (
-                    <div className="w-full h-full flex flex-col items-center justify-center p-4">
-                      <span className="text-muted-foreground text-xl text-center">Image not available</span>
-                      <span className="text-muted-foreground text-sm text-center mt-2">Check Google Drive sharing settings</span>
-                    </div>
-                  );
-                }
-
                 return (
                   <>
                     {imageLoading && (
@@ -148,20 +139,28 @@ const ProductDetail = () => {
                         <span className="text-muted-foreground">Loading...</span>
                       </div>
                     )}
-                    <img
-                      src={imageUrl}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                      onLoad={() => setImageLoading(false)}
-                      onError={(e) => {
-                        setImageError(true);
-                        setImageLoading(false);
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                      }}
-                      crossOrigin="anonymous"
-                      referrerPolicy="no-referrer"
-                    />
+                    {!imageError && (
+                      <img
+                        src={imageUrl}
+                        alt={product.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        onLoad={() => {
+                          setImageLoading(false);
+                          setImageError(false);
+                        }}
+                        onError={() => {
+                          setImageError(true);
+                          setImageLoading(false);
+                        }}
+                        style={{ display: imageError ? 'none' : 'block' }}
+                      />
+                    )}
+                    {imageError && (
+                      <div className="w-full h-full flex flex-col items-center justify-center p-4">
+                        <span className="text-muted-foreground text-xl text-center">Image not available</span>
+                        <span className="text-muted-foreground text-sm text-center mt-2">Check image URL or upload to Supabase Storage</span>
+                      </div>
+                    )}
                   </>
                 );
               })()}

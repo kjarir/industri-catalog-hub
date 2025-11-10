@@ -11,10 +11,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
-import { X, Plus, Edit, Trash2, LogOut, FolderTree, Upload, Image as ImageIcon } from 'lucide-react';
+import { X, Plus, Edit, Trash2, LogOut, FolderTree, Upload, Image as ImageIcon, RefreshCw } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { convertGoogleDriveUrl } from '@/lib/imageUtils';
-import { uploadProductImage, deleteProductImage } from '@/lib/storage';
+import { uploadProductImage, deleteProductImage, checkBucketExists } from '@/lib/storage';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -53,7 +53,15 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
     specifications: [{ key: '', value: '' }],
   });
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [bucketExists, setBucketExists] = useState<boolean | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Check if bucket exists when admin panel opens
+  useEffect(() => {
+    if (isOpen && isAuthenticated) {
+      checkBucketExists().then(setBucketExists);
+    }
+  }, [isOpen, isAuthenticated]);
 
   const [categoryFormData, setCategoryFormData] = useState({
     name: '',
@@ -192,8 +200,16 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
 
     setIsUploadingImage(true);
     try {
+      // Re-check bucket before upload
+      const exists = await checkBucketExists();
+      if (!exists) {
+        setBucketExists(false);
+        throw new Error('Storage bucket "product-images" not found. Please create it in Supabase Dashboard first.');
+      }
+
       const imageUrl = await uploadProductImage(file, editingProduct?.id);
       setFormData({ ...formData, image: imageUrl });
+      setBucketExists(true); // Update state after successful upload
       toast({
         title: 'Image Uploaded',
         description: 'Image uploaded successfully to Supabase Storage',
@@ -203,9 +219,10 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
       
       // Check if it's a bucket not found error
       if (errorMessage.includes('Bucket not found') || errorMessage.includes('not found')) {
+        setBucketExists(false);
         toast({
           title: 'Storage Bucket Not Found',
-          description: 'Please create the "product-images" bucket in Supabase Dashboard → Storage → New bucket (set to Public). See SUPABASE-STORAGE-SETUP.md for details. You can use manual URL input below for now.',
+          description: 'Please create the "product-images" bucket in Supabase Dashboard. Click the warning above for instructions, or use manual URL input below.',
           variant: 'destructive',
           duration: 10000, // Show for 10 seconds
         });
@@ -413,64 +430,72 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
 
             {/* Products Tab */}
             <TabsContent value="products">
-              <Card>
-                <CardHeader>
-                  <div className="flex justify-between items-center">
-                    <CardTitle>Products</CardTitle>
-                    <Button onClick={() => openProductDialog()}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Product
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle>Products</CardTitle>
+                <Button onClick={() => openProductDialog()}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Product
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
                   <div className="space-y-4 max-h-[60vh] overflow-y-auto overscroll-contain pr-2">
-                    {products?.map((product) => (
-                      <div
-                        key={product.id}
-                        className="flex items-center justify-between p-4 border border-border rounded-lg"
-                      >
-                        <div className="flex items-center gap-4">
+                {products?.map((product) => (
+                  <div
+                    key={product.id}
+                    className="flex items-center justify-between p-4 border border-border rounded-lg"
+                  >
+                    <div className="flex items-center gap-4">
                           {(() => {
                             const imageUrl = convertGoogleDriveUrl(product.image);
                             return imageUrl ? (
-                              <img
+                        <img
                                 src={imageUrl}
-                                alt={product.name}
-                                className="w-16 h-16 object-cover rounded"
+                          alt={product.name}
+                          className="w-16 h-16 object-cover rounded"
                                 onError={(e) => {
                                   const target = e.target as HTMLImageElement;
                                   target.style.display = 'none';
                                 }}
+                                onLoad={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'block';
+                                }}
                               />
-                            ) : null;
+                            ) : (
+                              <div className="w-16 h-16 bg-secondary rounded flex items-center justify-center">
+                                <span className="text-xs text-muted-foreground">No img</span>
+                              </div>
+                            );
                           })()}
-                          <div>
-                            <h3 className="font-semibold">{product.name}</h3>
-                            <p className="text-sm text-muted-foreground">{product.category}</p>
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => openProductDialog(product)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="icon"
-                            onClick={() => setDeleteProductId(product.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                      <div>
+                        <h3 className="font-semibold">{product.name}</h3>
+                        <p className="text-sm text-muted-foreground">{product.category}</p>
                       </div>
-                    ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => openProductDialog(product)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        onClick={() => setDeleteProductId(product.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
             </TabsContent>
 
             {/* Categories Tab */}
@@ -655,11 +680,60 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
                   className="hidden"
                   id="image-upload"
                 />
+                {bucketExists === false && (
+                  <div className="mb-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                    <div className="flex items-start justify-between mb-2">
+                      <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                        ⚠️ Storage bucket not found
+                      </p>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={async () => {
+                          const exists = await checkBucketExists();
+                          setBucketExists(exists);
+                          if (exists) {
+                            toast({
+                              title: 'Bucket Found!',
+                              description: 'Storage bucket is now available. You can upload images.',
+                            });
+                          }
+                        }}
+                        className="h-6 px-2 text-yellow-800 dark:text-yellow-200 hover:bg-yellow-100 dark:hover:bg-yellow-900/40"
+                      >
+                        <RefreshCw className="h-3 w-3 mr-1" />
+                        Check Again
+                      </Button>
+                    </div>
+                    <p className="text-xs text-yellow-700 dark:text-yellow-300 mb-2">
+                      Create the bucket to enable direct uploads:
+                    </p>
+                    <ol className="text-xs text-yellow-700 dark:text-yellow-300 list-decimal list-inside space-y-1 mb-2">
+                      <li>Go to <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" className="underline font-medium">Supabase Dashboard</a> → <strong>Storage</strong></li>
+                      <li>Click <strong>"New bucket"</strong></li>
+                      <li>Name: <strong className="font-mono">product-images</strong> (exact name)</li>
+                      <li>Set to <strong>Public</strong> (important!)</li>
+                      <li>Click <strong>"Create bucket"</strong></li>
+                      <li>Click <strong>"Check Again"</strong> button above to verify</li>
+                    </ol>
+                    <p className="text-xs text-yellow-700 dark:text-yellow-300">
+                      💡 <strong>Tip:</strong> You can use manual URL input below while setting up the bucket.
+                    </p>
+                  </div>
+                )}
+                {bucketExists === true && (
+                  <div className="mb-3 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                    <p className="text-xs text-green-700 dark:text-green-300">
+                      ✅ Storage bucket is ready! You can upload images directly.
+                    </p>
+                  </div>
+                )}
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploadingImage}
+                  disabled={isUploadingImage || bucketExists === false}
                   className="w-full"
                 >
                   {isUploadingImage ? (
@@ -670,7 +744,7 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
                   ) : (
                     <>
                       <Upload className="mr-2 h-4 w-4" />
-                      Upload Image to Supabase Storage
+                      {bucketExists === false ? 'Bucket Not Created Yet' : 'Upload Image to Supabase Storage'}
                     </>
                   )}
                 </Button>
@@ -714,10 +788,10 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
                 <label className="block text-xs font-medium mb-1 text-muted-foreground">
                   Or paste image URL manually:
                 </label>
-                <Input
-                  type="url"
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+              <Input
+                type="url"
+                value={formData.image}
+                onChange={(e) => setFormData({ ...formData, image: e.target.value })}
                   placeholder="Paste image URL (Google Drive, Imgur, etc.)"
                 />
               </div>

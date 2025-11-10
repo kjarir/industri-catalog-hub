@@ -8,16 +8,21 @@
  * 3. An image file (jpg, png, gif, webp, etc.)
  */
 export const convertGoogleDriveUrl = (url: string | null | undefined): string | null => {
-  if (!url) return null;
+  if (!url || url.trim() === '') return null;
 
-  // If it's already a direct image URL (not a Google Drive link), return as is
+  // If it's already a direct image URL (Supabase Storage, Imgur, etc.), return as is
   if (!url.includes('drive.google.com') && !url.includes('googleusercontent.com')) {
-    return url;
+    return url.trim();
   }
 
   // If it's already a googleusercontent.com URL, return as is (these are direct image URLs)
   if (url.includes('googleusercontent.com')) {
-    return url;
+    return url.trim();
+  }
+
+  // If it's a Supabase Storage URL, return as is
+  if (url.includes('supabase.co') || url.includes('supabase.storage')) {
+    return url.trim();
   }
 
   // Extract file ID from various Google Drive URL formats
@@ -51,13 +56,11 @@ export const convertGoogleDriveUrl = (url: string | null | undefined): string | 
 
   // If we found a file ID, try multiple methods to get the image
   if (fileId) {
-    // Try thumbnail API first (more reliable, but may be smaller)
-    // sz parameter: w1000 = width 1000px, w1920 = width 1920px, etc.
-    // This method is often more reliable than export=view
-    return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1920`;
+    // Try standard export method first (full quality)
+    return `https://drive.google.com/uc?export=view&id=${fileId}`;
     
-    // Alternative: Standard export method (uncomment if thumbnail doesn't work)
-    // return `https://drive.google.com/uc?export=view&id=${fileId}`;
+    // Alternative: Thumbnail API (uncomment if export=view doesn't work)
+    // return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1920`;
   }
 
   // If we couldn't parse it, return the original URL

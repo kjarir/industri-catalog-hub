@@ -101,36 +101,49 @@ export const ProductCard = ({ id, name, category, description, image }: ProductC
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
 
+  // Reset states when image URL changes
+  useEffect(() => {
+    if (imageUrl) {
+      setImageError(false);
+      setImageLoading(true);
+    } else {
+      setImageLoading(false);
+    }
+  }, [imageUrl]);
+
   return (
     <Card ref={cardRef} className="group overflow-hidden">
       <div ref={imageRef} className="aspect-square overflow-hidden bg-secondary relative">
-        {imageUrl && !imageError ? (
+        {imageUrl ? (
           <>
             {imageLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-secondary">
+              <div className="absolute inset-0 flex items-center justify-center bg-secondary z-10">
                 <span className="text-muted-foreground text-sm">Loading...</span>
               </div>
             )}
-            <img
-              src={imageUrl}
-              alt={name}
-              className="w-full h-full object-cover"
-              onLoad={() => setImageLoading(false)}
-              onError={(e) => {
-                setImageError(true);
-                setImageLoading(false);
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-              }}
-              crossOrigin="anonymous"
-              referrerPolicy="no-referrer"
-            />
+            {!imageError && (
+              <img
+                src={imageUrl}
+                alt={name}
+                className="w-full h-full object-cover"
+                onLoad={() => {
+                  setImageLoading(false);
+                  setImageError(false);
+                }}
+                onError={() => {
+                  setImageError(true);
+                  setImageLoading(false);
+                }}
+                style={{ display: imageError ? 'none' : 'block' }}
+              />
+            )}
+            {imageError && (
+              <div className="w-full h-full flex flex-col items-center justify-center p-4">
+                <span className="text-muted-foreground text-sm text-center">Image not available</span>
+                <span className="text-muted-foreground text-xs text-center mt-2">Check image URL or upload to Supabase Storage</span>
+              </div>
+            )}
           </>
-        ) : imageError ? (
-          <div className="w-full h-full flex flex-col items-center justify-center p-4">
-            <span className="text-muted-foreground text-sm text-center">Image not available</span>
-            <span className="text-muted-foreground text-xs text-center mt-2">Check Google Drive sharing settings</span>
-          </div>
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <span className="text-muted-foreground">No image</span>

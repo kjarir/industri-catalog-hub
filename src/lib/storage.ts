@@ -119,10 +119,32 @@ export const deleteProductImage = async (imageUrl: string): Promise<void> => {
 };
 
 /**
+ * Check if the storage bucket exists
+ */
+export const checkBucketExists = async (): Promise<boolean> => {
+  try {
+    const { data: buckets, error } = await supabase.storage.listBuckets();
+    if (error) {
+      console.error('Error checking buckets:', error);
+      return false;
+    }
+    return buckets?.some(bucket => bucket.name === BUCKET_NAME) || false;
+  } catch (error) {
+    console.error('Error checking bucket existence:', error);
+    return false;
+  }
+};
+
+/**
  * Get storage usage information
  */
 export const getStorageInfo = async () => {
   try {
+    const bucketExists = await checkBucketExists();
+    if (!bucketExists) {
+      return null;
+    }
+
     const { data, error } = await supabase.storage.from(BUCKET_NAME).list();
     if (error) throw error;
 
