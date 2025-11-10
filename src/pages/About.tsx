@@ -110,12 +110,12 @@ const About = () => {
               <div>
                 <h2 className="text-3xl font-bold mb-6">Who We Are</h2>
                 <div className="space-y-4 text-muted-foreground leading-relaxed text-lg">
-                  <p>
+                <p>
                     At Flowra Valves, we are dedicated to delivering reliable, high-performance solutions for fluid control and piping systems. With a strong focus on quality, precision, and durability, we specialize in the manufacturing and supply of industrial valves and fittings that meet global standards.
                   </p>
                   <p>
                     We believe that every connection matters — which is why our products are engineered with accuracy, tested for performance, and built to last. Whether for oil & gas, chemical, petrochemical, power, or general industrial applications, Flowra Valves stands for trust, consistency, and excellence.
-                  </p>
+                </p>
                 </div>
               </div>
 
