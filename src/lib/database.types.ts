@@ -16,6 +16,7 @@ export interface Database {
           category: string
           description: string
           image: string | null
+          images: Json | null // Array of image URLs for gallery
           specifications: Json | null
           created_at: string
           updated_at: string
@@ -26,6 +27,7 @@ export interface Database {
           category: string
           description: string
           image?: string | null
+          images?: Json | null // Array of image URLs for gallery
           specifications?: Json | null
           created_at?: string
           updated_at?: string
@@ -36,6 +38,7 @@ export interface Database {
           category?: string
           description?: string
           image?: string | null
+          images?: Json | null // Array of image URLs for gallery
           specifications?: Json | null
           created_at?: string
           updated_at?: string

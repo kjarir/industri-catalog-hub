@@ -50,11 +50,13 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
     category: '',
     description: '',
     image: '',
+    images: [] as string[], // Array for multiple images
     specifications: [{ key: '', value: '' }],
   });
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [bucketExists, setBucketExists] = useState<boolean | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const multipleFileInputRef = useRef<HTMLInputElement>(null);
 
   // Check if bucket exists when admin panel opens
   useEffect(() => {
@@ -165,6 +167,7 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
       category: '',
       description: '',
       image: '',
+      images: [],
       specifications: [{ key: '', value: '' }],
     });
     setEditingProduct(null);
@@ -173,11 +176,19 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
   const openProductDialog = (product?: Product) => {
     if (product) {
       setEditingProduct(product);
+      // Support both old single image and new images array
+      const productImages = product.images && product.images.length > 0 
+        ? product.images 
+        : product.image 
+          ? [product.image] 
+          : [];
+      
       setFormData({
         name: product.name,
         category: product.category,
         description: product.description,
         image: product.image || '',
+        images: productImages,
         specifications: product.specifications || [{ key: '', value: '' }],
       });
     } else {
@@ -214,7 +225,15 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
     try {
       // Try to upload directly - the upload function will handle bucket checking
       const imageUrl = await uploadProductImage(file, editingProduct?.id);
-      setFormData({ ...formData, image: imageUrl });
+      // Update both single image (for backward compatibility) and images array
+      const updatedImages = formData.images.length > 0 
+        ? [...formData.images, imageUrl]
+        : [imageUrl];
+      setFormData({ 
+        ...formData, 
+        image: imageUrl, // Keep single image for backward compatibility
+        images: updatedImages 
+      });
       setBucketExists(true); // Update state after successful upload
       toast({
         title: 'Image Uploaded',
@@ -248,22 +267,134 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
     }
   };
 
+  const handleMultipleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    // Validate all files
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: 'Invalid File',
+          description: `${file.name} is not an image file. Please select image files only.`,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: 'File Too Large',
+          description: `${file.name} is larger than 5MB. Please compress it and try again.`,
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
+    setIsUploadingImage(true);
+    const uploadedUrls: string[] = [];
+    let successCount = 0;
+    let failCount = 0;
+
+    try {
+      for (const file of files) {
+        try {
+          const imageUrl = await uploadProductImage(file, editingProduct?.id);
+          uploadedUrls.push(imageUrl);
+          successCount++;
+        } catch (error: any) {
+          failCount++;
+          console.error(`Failed to upload ${file.name}:`, error);
+        }
+      }
+
+      if (uploadedUrls.length > 0) {
+        const updatedImages = [...formData.images, ...uploadedUrls];
+        setFormData({
+          ...formData,
+          image: updatedImages[0] || formData.image, // Set first image as main image
+          images: updatedImages,
+        });
+        setBucketExists(true);
+        toast({
+          title: 'Images Uploaded',
+          description: `Successfully uploaded ${successCount} image(s)${failCount > 0 ? `. ${failCount} failed.` : ''}`,
+        });
+      } else {
+        toast({
+          title: 'Upload Failed',
+          description: 'Failed to upload all images. Please try again.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Upload Error',
+        description: error.message || 'Failed to upload images. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUploadingImage(false);
+      if (multipleFileInputRef.current) {
+        multipleFileInputRef.current.value = '';
+      }
+    }
+  };
+
   const handleSubmitProduct = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const productData = {
-      ...formData,
-      specifications: formData.specifications.filter(s => s.key && s.value),
-    };
+    try {
+      // Prepare images array - use images array if available, otherwise fall back to single image
+      const imagesArray = formData.images.length > 0 
+        ? formData.images 
+        : formData.image 
+          ? [formData.image] 
+          : [];
 
-    if (editingProduct) {
-      await updateProduct.mutateAsync({ id: editingProduct.id, ...productData });
-    } else {
-      await createProduct.mutateAsync(productData);
+      // Prepare product data - only include images if we have them
+      const productData: any = {
+        name: formData.name,
+        category: formData.category,
+        description: formData.description,
+        image: formData.image || (imagesArray.length > 0 ? imagesArray[0] : null),
+        specifications: formData.specifications.filter(s => s.key && s.value),
+      };
+
+      // Only include images field if we have images (to avoid errors if column doesn't exist yet)
+      if (imagesArray.length > 0) {
+        productData.images = imagesArray;
+      }
+
+      if (editingProduct) {
+        await updateProduct.mutateAsync({ id: editingProduct.id, ...productData });
+      } else {
+        await createProduct.mutateAsync(productData);
+      }
+
+      setIsProductDialogOpen(false);
+      resetForm();
+    } catch (error: any) {
+      console.error('Error submitting product:', error);
+      
+      // Check if it's a missing column error
+      const errorMessage = error?.message || '';
+      if (errorMessage.includes('column') && errorMessage.includes('images')) {
+        toast({
+          title: 'Database Migration Required',
+          description: 'The images column is missing. Please run the migration-add-images-column.sql file in Supabase SQL Editor to enable multiple images.',
+          variant: 'destructive',
+          duration: 10000,
+        });
+      } else {
+        toast({
+          title: 'Submission Error',
+          description: errorMessage || 'Failed to save product. Please check the console for details.',
+          variant: 'destructive',
+        });
+      }
     }
-
-    setIsProductDialogOpen(false);
-    resetForm();
   };
 
   const handleDeleteProduct = async () => {
@@ -674,10 +805,19 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Product Image</label>
+              <label className="block text-sm font-medium mb-2">Product Images</label>
               
-              {/* File Upload */}
+              {/* Multiple File Upload */}
               <div className="mb-3">
+                <input
+                  ref={multipleFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleMultipleImageUpload}
+                  className="hidden"
+                  id="multiple-image-upload"
+                />
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -745,25 +885,46 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
                     </p>
                   </div>
                 )}
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploadingImage}
-                  className="w-full"
-                >
-                  {isUploadingImage ? (
-                    <>
-                      <Upload className="mr-2 h-4 w-4 animate-spin" />
-                      Uploading...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="mr-2 h-4 w-4" />
-                      {bucketExists === false ? 'Try Upload Anyway (Bucket Check Failed)' : 'Upload Image to Supabase Storage'}
-                    </>
-                  )}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => multipleFileInputRef.current?.click()}
+                    disabled={isUploadingImage}
+                    className="flex-1"
+                  >
+                    {isUploadingImage ? (
+                      <>
+                        <Upload className="mr-2 h-4 w-4 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="mr-2 h-4 w-4" />
+                        {bucketExists === false ? 'Upload Multiple (Bucket Check Failed)' : 'Upload Multiple Images'}
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingImage}
+                    className="flex-1"
+                  >
+                    {isUploadingImage ? (
+                      <>
+                        <ImageIcon className="mr-2 h-4 w-4 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <ImageIcon className="mr-2 h-4 w-4" />
+                        Upload Single
+                      </>
+                    )}
+                  </Button>
+                </div>
                 {bucketExists === null && (
                   <p className="text-xs text-muted-foreground mt-1 text-center">
                     Checking bucket status...
@@ -771,35 +932,56 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
                 )}
               </div>
 
-              {/* Image Preview */}
-              {formData.image && (
+              {/* Images Preview */}
+              {formData.images.length > 0 && (
                 <div className="mb-3">
-                  <div className="relative w-full h-48 border border-border rounded-lg overflow-hidden bg-secondary">
-                    <img
-                      src={formData.image}
-                      alt="Product preview"
-                      className="w-full h-full object-contain"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        const parent = target.parentElement;
-                        if (parent && !parent.querySelector('.image-error')) {
-                          const errorDiv = document.createElement('div');
-                          errorDiv.className = 'image-error w-full h-full flex items-center justify-center';
-                          errorDiv.innerHTML = '<span class="text-muted-foreground text-sm">Failed to load image</span>';
-                          parent.appendChild(errorDiv);
-                        }
-                      }}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute top-2 right-2 bg-background/80 hover:bg-background"
-                      onClick={() => setFormData({ ...formData, image: '' })}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    {formData.images.length} image(s) uploaded. Click to remove.
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {formData.images.map((img, index) => (
+                      <div key={index} className="relative group">
+                        <div className="relative w-full h-32 border border-border rounded-lg overflow-hidden bg-secondary">
+                          <img
+                            src={img}
+                            alt={`Product image ${index + 1}`}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              const parent = target.parentElement;
+                              if (parent && !parent.querySelector('.image-error')) {
+                                const errorDiv = document.createElement('div');
+                                errorDiv.className = 'image-error w-full h-full flex items-center justify-center';
+                                errorDiv.innerHTML = '<span class="text-muted-foreground text-xs">Failed to load</span>';
+                                parent.appendChild(errorDiv);
+                              }
+                            }}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute top-1 right-1 bg-background/90 hover:bg-destructive hover:text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => {
+                              const updatedImages = formData.images.filter((_, i) => i !== index);
+                              setFormData({
+                                ...formData,
+                                images: updatedImages,
+                                image: updatedImages[0] || '', // Update main image if first was removed
+                              });
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                          {index === 0 && (
+                            <div className="absolute bottom-1 left-1 bg-primary text-primary-foreground text-xs px-1.5 py-0.5 rounded">
+                              Main
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
