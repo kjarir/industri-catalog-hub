@@ -353,6 +353,34 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
           ? [formData.image] 
           : [];
 
+      // If editing, find images that were removed and delete them from storage
+      if (editingProduct) {
+        const originalImages: string[] = [];
+        
+        // Get original images array if it exists
+        if (editingProduct.images && Array.isArray(editingProduct.images)) {
+          originalImages.push(...editingProduct.images);
+        } else if (editingProduct.image) {
+          originalImages.push(editingProduct.image);
+        }
+        
+        // Find images that were removed (in original but not in current)
+        const removedImages = originalImages.filter(
+          img => img && !imagesArray.includes(img) && img.includes('supabase.co')
+        );
+        
+        // Delete removed images from storage
+        if (removedImages.length > 0) {
+          try {
+            await Promise.all(removedImages.map(img => deleteProductImage(img)));
+            console.log(`Deleted ${removedImages.length} removed image(s) from storage`);
+          } catch (error) {
+            console.error('Failed to delete some removed images from storage:', error);
+            // Don't block the update if image deletion fails
+          }
+        }
+      }
+
       // Prepare product data - only include images if we have them
       const productData: any = {
         name: formData.name,
@@ -365,6 +393,8 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
       // Only include images field if we have images (to avoid errors if column doesn't exist yet)
       if (imagesArray.length > 0) {
         productData.images = imagesArray;
+      } else {
+        productData.images = null; // Explicitly set to null if no images
       }
 
       if (editingProduct) {
@@ -399,18 +429,36 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
 
   const handleDeleteProduct = async () => {
     if (deleteProductId) {
-      // Find the product to get its image URL
+      // Find the product to get its image URLs
       const productToDelete = products?.find(p => p.id === deleteProductId);
       
       // Delete the product
       await deleteProduct.mutateAsync(deleteProductId);
       
-      // Delete the image from storage if it exists and is from Supabase
+      // Delete all images from storage if they exist and are from Supabase
+      const imagesToDelete: string[] = [];
+      
+      // Add main image if it's from Supabase
       if (productToDelete?.image && productToDelete.image.includes('supabase.co')) {
+        imagesToDelete.push(productToDelete.image);
+      }
+      
+      // Add all images from images array if they're from Supabase
+      if (productToDelete?.images && Array.isArray(productToDelete.images)) {
+        productToDelete.images.forEach((img: string) => {
+          if (img && img.includes('supabase.co')) {
+            imagesToDelete.push(img);
+          }
+        });
+      }
+      
+      // Delete all images in parallel
+      if (imagesToDelete.length > 0) {
         try {
-          await deleteProductImage(productToDelete.image);
+          await Promise.all(imagesToDelete.map(img => deleteProductImage(img)));
+          console.log(`Deleted ${imagesToDelete.length} image(s) from storage`);
         } catch (error) {
-          console.error('Failed to delete image from storage:', error);
+          console.error('Failed to delete some images from storage:', error);
         }
       }
       
@@ -963,7 +1011,28 @@ export const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
                             variant="ghost"
                             size="icon"
                             className="absolute top-1 right-1 bg-background/90 hover:bg-destructive hover:text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => {
+                            onClick={async () => {
+                              const imageToRemove = formData.images[index];
+                              
+                              // Delete from Supabase Storage if it's a Supabase URL
+                              if (imageToRemove && imageToRemove.includes('supabase.co')) {
+                                try {
+                                  await deleteProductImage(imageToRemove);
+                                  toast({
+                                    title: 'Image Deleted',
+                                    description: 'Image removed from storage successfully',
+                                  });
+                                } catch (error: any) {
+                                  console.error('Failed to delete image from storage:', error);
+                                  toast({
+                                    title: 'Warning',
+                                    description: 'Image removed from form, but failed to delete from storage. You may need to delete it manually.',
+                                    variant: 'destructive',
+                                  });
+                                }
+                              }
+                              
+                              // Remove from form state
                               const updatedImages = formData.images.filter((_, i) => i !== index);
                               setFormData({
                                 ...formData,
